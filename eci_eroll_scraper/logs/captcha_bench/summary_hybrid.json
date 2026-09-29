@@ -1,0 +1,109 @@
+{
+  "solver": "hybrid",
+  "trials": 10,
+  "submitted": 10,
+  "hits": 9,
+  "rate": 0.9,
+  "results": [
+    {
+      "trial": 1,
+      "method": "whisper_swap_vb",
+      "answer": "jvyxb2",
+      "ocr": "3vyv2",
+      "whisper": "jvyxv2",
+      "whisper_raw": "J V Y X V 2",
+      "ok": false,
+      "message": "Invalid Catpcha"
+    },
+    {
+      "trial": 2,
+      "method": "ocr",
+      "answer": "5u9qe2",
+      "ocr": "5u9qe2",
+      "whisper": "5u9ue2",
+      "whisper_raw": "5 U 9 U E 2",
+      "ok": true,
+      "message": "Success"
+    },
+    {
+      "trial": 3,
+      "method": "whisper",
+      "answer": "twmyff",
+      "ocr": "twmyf",
+      "whisper": "twmyff",
+      "whisper_raw": "T W M Y F F",
+      "ok": true,
+      "message": "Success"
+    },
+    {
+      "trial": 4,
+      "method": "whisper",
+      "answer": "er5x45",
+      "ocr": "er5x45",
+      "whisper": "er5x45",
+      "whisper_raw": "E R 5 X 4 5",
+      "ok": true,
+      "message": "Success"
+    },
+    {
+      "trial": 5,
+      "method": "whisper",
+      "answer": "3csg9e",
+      "ocr": "3csg9e",
+      "whisper": "3csg9e",
+      "whisper_raw": "3 C S G 9 E",
+      "ok": true,
+      "message": "Success"
+    },
+    {
+      "trial": 6,
+      "method": "whisper",
+      "answer": "rac5jt",
+      "ocr": "rdc5t",
+      "whisper": "rac5jt",
+      "whisper_raw": "R A C 5 J T",
+      "ok": true,
+      "message": "Success"
+    },
+    {
+      "trial": 7,
+      "method": "ocr",
+      "answer": "5rbj5q",
+      "ocr": "5rbj5q",
+      "whisper": "5rvj5u",
+      "whisper_raw": "5 R V J 5 U",
+      "ok": true,
+      "message": "Success"
+    },
+    {
+      "trial": 8,
+      "method": "whisper",
+      "answer": "atxk76",
+      "ocr": "atxk76",
+      "whisper": "atxk76",
+      "whisper_raw": "A T X K 7 6",
+      "ok": true,
+      "message": "Success"
+    },
+    {
+      "trial": 9,
+      "method": "ocr",
+      "answer": "anzzqu",
+      "ocr": "anzzqu",
+      "whisper": "anzzuu",
+      "whisper_raw": "A N Z Z U U",
+      "ok": true,
+      "message": "Success"
+    },
+    {
+      "trial": 10,
+      "method": "whisper",
+      "answer": "eczxgd",
+      "ocr": "eczxgd",
+      "whisper": "eczxgd",
+      "whisper_raw": "E C Z X G D",
+      "ok": true,
+      "message": "Success"
+    }
+  ]
+}

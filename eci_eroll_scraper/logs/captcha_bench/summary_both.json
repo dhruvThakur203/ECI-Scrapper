@@ -1,0 +1,109 @@
+{
+  "solver": "both",
+  "trials": 10,
+  "submitted": 10,
+  "hits": 6,
+  "rate": 0.6,
+  "results": [
+    {
+      "trial": 1,
+      "method": "whisper",
+      "answer": "vspgsy",
+      "ocr": "vSpgsy",
+      "whisper": "vspgsy",
+      "whisper_raw": "V S P G S Y",
+      "ok": true,
+      "message": "Success"
+    },
+    {
+      "trial": 2,
+      "method": "whisper",
+      "answer": "4fr6vz",
+      "ocr": "4frv",
+      "whisper": "4fr6vz",
+      "whisper_raw": "4 F R 6 V Z",
+      "ok": true,
+      "message": "Success"
+    },
+    {
+      "trial": 3,
+      "method": "whisper",
+      "answer": "w4d6gv",
+      "ocr": "w4d6gv",
+      "whisper": "w4d6gv",
+      "whisper_raw": "W 4 D 6 G V",
+      "ok": true,
+      "message": "Success"
+    },
+    {
+      "trial": 4,
+      "method": "whisper",
+      "answer": "f8h9gv",
+      "ocr": "8h9b",
+      "whisper": "f8h9gv",
+      "whisper_raw": "F 8 H 9 G V",
+      "ok": false,
+      "message": "Invalid Catpcha"
+    },
+    {
+      "trial": 5,
+      "method": "whisper",
+      "answer": "z485uw",
+      "ocr": "z485uw",
+      "whisper": "z485uw",
+      "whisper_raw": "Z 4 8 5 U W",
+      "ok": true,
+      "message": "Success"
+    },
+    {
+      "trial": 6,
+      "method": "whisper",
+      "answer": "5hvu53",
+      "ocr": "5hbq53",
+      "whisper": "5hvu53",
+      "whisper_raw": "5 H V U 5 3",
+      "ok": false,
+      "message": "Invalid Catpcha"
+    },
+    {
+      "trial": 7,
+      "method": "whisper",
+      "answer": "8zt32r",
+      "ocr": "8zt32r",
+      "whisper": "8zt32r",
+      "whisper_raw": "8 Z T 3 2 R",
+      "ok": true,
+      "message": "Success"
+    },
+    {
+      "trial": 8,
+      "method": "whisper",
+      "answer": "32ncdv",
+      "ocr": "32ncdb",
+      "whisper": "32ncdv",
+      "whisper_raw": "3 2 N C D V",
+      "ok": false,
+      "message": "Invalid Catpcha"
+    },
+    {
+      "trial": 9,
+      "method": "whisper",
+      "answer": "my9u6k",
+      "ocr": "mY9q6k",
+      "whisper": "my9u6k",
+      "whisper_raw": "M Y 9 U 6 K",
+      "ok": false,
+      "message": "Invalid Catpcha"
+    },
+    {
+      "trial": 10,
+      "method": "whisper",
+      "answer": "5ac7x7",
+      "ocr": "5dc7x",
+      "whisper": "5ac7x7",
+      "whisper_raw": "5 A C 7 X 7",
+      "ok": true,
+      "message": "Success"
+    }
+  ]
+}

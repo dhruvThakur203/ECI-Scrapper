@@ -1,0 +1,640 @@
+{
+  "url": "https://voters.eci.gov.in/download-eroll",
+  "states": [
+    {
+      "state_name": "Andaman & Nicobar Islands",
+      "state_code": "U01"
+    },
+    {
+      "state_name": "Andhra Pradesh",
+      "state_code": "S01"
+    },
+    {
+      "state_name": "Arunachal Pradesh",
+      "state_code": "S02"
+    },
+    {
+      "state_name": "Assam",
+      "state_code": "S03"
+    },
+    {
+      "state_name": "Bihar",
+      "state_code": "S04"
+    },
+    {
+      "state_name": "Chandigarh",
+      "state_code": "U02"
+    },
+    {
+      "state_name": "Chhattisgarh",
+      "state_code": "S26"
+    },
+    {
+      "state_name": "Dadra & Nagar Haveli and Daman & Diu",
+      "state_code": "U03"
+    },
+    {
+      "state_name": "Goa",
+      "state_code": "S05"
+    },
+    {
+      "state_name": "Gujarat",
+      "state_code": "S06"
+    },
+    {
+      "state_name": "Haryana",
+      "state_code": "S07"
+    },
+    {
+      "state_name": "Himachal Pradesh",
+      "state_code": "S08"
+    },
+    {
+      "state_name": "Jammu and Kashmir",
+      "state_code": "U08"
+    },
+    {
+      "state_name": "Jharkhand",
+      "state_code": "S27"
+    },
+    {
+      "state_name": "Karnataka",
+      "state_code": "S10"
+    },
+    {
+      "state_name": "Kerala",
+      "state_code": "S11"
+    },
+    {
+      "state_name": "Ladakh",
+      "state_code": "U09"
+    },
+    {
+      "state_name": "Lakshadweep",
+      "state_code": "U06"
+    },
+    {
+      "state_name": "Madhya Pradesh",
+      "state_code": "S12"
+    },
+    {
+      "state_name": "Maharashtra",
+      "state_code": "S13"
+    },
+    {
+      "state_name": "Manipur",
+      "state_code": "S14"
+    },
+    {
+      "state_name": "Meghalaya",
+      "state_code": "S15"
+    },
+    {
+      "state_name": "Mizoram",
+      "state_code": "S16"
+    },
+    {
+      "state_name": "Nagaland",
+      "state_code": "S17"
+    },
+    {
+      "state_name": "NCT OF Delhi",
+      "state_code": "U05"
+    },
+    {
+      "state_name": "Odisha",
+      "state_code": "S18"
+    },
+    {
+      "state_name": "Puducherry",
+      "state_code": "U07"
+    },
+    {
+      "state_name": "Punjab",
+      "state_code": "S19"
+    },
+    {
+      "state_name": "Rajasthan",
+      "state_code": "S20"
+    },
+    {
+      "state_name": "Sikkim",
+      "state_code": "S21"
+    },
+    {
+      "state_name": "Tamil Nadu",
+      "state_code": "S22"
+    },
+    {
+      "state_name": "Telangana",
+      "state_code": "S29"
+    },
+    {
+      "state_name": "Tripura",
+      "state_code": "S23"
+    },
+    {
+      "state_name": "Uttar Pradesh",
+      "state_code": "S24"
+    },
+    {
+      "state_name": "Uttarakhand",
+      "state_code": "S28"
+    },
+    {
+      "state_name": "West Bengal",
+      "state_code": "S25"
+    }
+  ],
+  "selected_state": {
+    "state_name": "NCT OF Delhi",
+    "state_code": "U05"
+  },
+  "year": "2026",
+  "roll_types": [
+    {
+      "value": "U05-2026-DR",
+      "text": "SIR DraftRoll - 2026"
+    }
+  ],
+  "dependent_controls": {
+    "district_visible": true,
+    "districts": [
+      {
+        "value": "U0505",
+        "text": "Central"
+      },
+      {
+        "value": "U0506",
+        "text": "Central North"
+      },
+      {
+        "value": "U0511",
+        "text": "East"
+      },
+      {
+        "value": "U0504",
+        "text": "New Delhi"
+      },
+      {
+        "value": "U0503",
+        "text": "North"
+      },
+      {
+        "value": "U0510",
+        "text": "North East"
+      },
+      {
+        "value": "U0509",
+        "text": "North West"
+      },
+      {
+        "value": "U0502",
+        "text": "Old Delhi"
+      },
+      {
+        "value": "U0508",
+        "text": "Outer North"
+      },
+      {
+        "value": "U0512",
+        "text": "South"
+      },
+      {
+        "value": "U0501",
+        "text": "South East"
+      },
+      {
+        "value": "U0507",
+        "text": "South West"
+      },
+      {
+        "value": "U0513",
+        "text": "West"
+      }
+    ],
+    "constituencies": [
+      {
+        "value": "1",
+        "text": "1 - NERELA"
+      },
+      {
+        "value": "2",
+        "text": "2 - BURARI"
+      },
+      {
+        "value": "3",
+        "text": "3 - TIMARPUR"
+      },
+      {
+        "value": "4",
+        "text": "4 - ADARSH NAGAR"
+      },
+      {
+        "value": "5",
+        "text": "5 - BADLI"
+      },
+      {
+        "value": "6",
+        "text": "6 - RITHALA"
+      },
+      {
+        "value": "7",
+        "text": "7 - BAWANA"
+      },
+      {
+        "value": "8",
+        "text": "8 - MUNDKA"
+      },
+      {
+        "value": "9",
+        "text": "9 - KIRARI"
+      },
+      {
+        "value": "10",
+        "text": "10 - SULTANPUR MAJRA"
+      },
+      {
+        "value": "11",
+        "text": "11 - NANGLOI JAT"
+      },
+      {
+        "value": "12",
+        "text": "12 - MANGOL PURI"
+      },
+      {
+        "value": "13",
+        "text": "13 - ROHINI"
+      },
+      {
+        "value": "14",
+        "text": "14 - SHALIMAR BAGH"
+      },
+      {
+        "value": "15",
+        "text": "15 - SHAKUR BASTI"
+      },
+      {
+        "value": "16",
+        "text": "16 - TRI NAGAR"
+      },
+      {
+        "value": "17",
+        "text": "17 - WAZIRPUR"
+      },
+      {
+        "value": "18",
+        "text": "18 - MODEL TOWN"
+      },
+      {
+        "value": "19",
+        "text": "19 - SADAR BAZAR"
+      },
+      {
+        "value": "20",
+        "text": "20 - CHANDNI CHOWK"
+      },
+      {
+        "value": "21",
+        "text": "21 - MATIA MAHAL"
+      },
+      {
+        "value": "22",
+        "text": "22 - BALLIMARAN"
+      },
+      {
+        "value": "23",
+        "text": "23 - KAROL BAGH"
+      },
+      {
+        "value": "24",
+        "text": "24 - PATEL NAGAR"
+      },
+      {
+        "value": "25",
+        "text": "25 - MOTI NAGAR"
+      },
+      {
+        "value": "26",
+        "text": "26 - MADIPUR"
+      },
+      {
+        "value": "27",
+        "text": "27 - RAJOURI GARDEN"
+      },
+      {
+        "value": "28",
+        "text": "28 - HARI NAGAR"
+      },
+      {
+        "value": "29",
+        "text": "29 - TILAK NAGAR"
+      },
+      {
+        "value": "30",
+        "text": "30 - JANAKPURI"
+      },
+      {
+        "value": "31",
+        "text": "31 - VIKASPURI"
+      },
+      {
+        "value": "32",
+        "text": "32 - UTTAM NAGAR"
+      },
+      {
+        "value": "33",
+        "text": "33 - DWARKA"
+      },
+      {
+        "value": "34",
+        "text": "34 - MATIALA"
+      },
+      {
+        "value": "35",
+        "text": "35 - NAJAFGARH"
+      },
+      {
+        "value": "36",
+        "text": "36 - BIJWASAN"
+      },
+      {
+        "value": "37",
+        "text": "37 - PALAM"
+      },
+      {
+        "value": "38",
+        "text": "38 - DELHI CANTT"
+      },
+      {
+        "value": "39",
+        "text": "39 - RAJINDER NAGAR"
+      },
+      {
+        "value": "40",
+        "text": "40 - NEW DELHI"
+      },
+      {
+        "value": "41",
+        "text": "41 - JANGPURA"
+      },
+      {
+        "value": "42",
+        "text": "42 - KASTURBA NAGAR"
+      },
+      {
+        "value": "43",
+        "text": "43 - MALVIYA NAGAR"
+      },
+      {
+        "value": "44",
+        "text": "44 - R K PURAM"
+      },
+      {
+        "value": "45",
+        "text": "45 - MEHRAULI"
+      },
+      {
+        "value": "46",
+        "text": "46 - CHHATARPUR"
+      },
+      {
+        "value": "47",
+        "text": "47 - DEOLI"
+      },
+      {
+        "value": "48",
+        "text": "48 - AMBEDKAR NAGAR"
+      },
+      {
+        "value": "49",
+        "text": "49 - SANGAM VIHAR"
+      },
+      {
+        "value": "50",
+        "text": "50 - GREATER KAILASH"
+      },
+      {
+        "value": "51",
+        "text": "51 - KALKAJI"
+      },
+      {
+        "value": "52",
+        "text": "52 - TUGHLAKABAD"
+      },
+      {
+        "value": "53",
+        "text": "53 - BADARPUR"
+      },
+      {
+        "value": "54",
+        "text": "54 - OKHLA"
+      },
+      {
+        "value": "55",
+        "text": "55 - TRILOKPURI"
+      },
+      {
+        "value": "56",
+        "text": "56 - KONDLI"
+      },
+      {
+        "value": "57",
+        "text": "57 - PATPARGANJ"
+      },
+      {
+        "value": "58",
+        "text": "58 - LAXMI NAGAR"
+      },
+      {
+        "value": "59",
+        "text": "59 - VISHWAS NAGAR"
+      },
+      {
+        "value": "60",
+        "text": "60 - KRISHNA NAGAR"
+      },
+      {
+        "value": "61",
+        "text": "61 - GANDHI NAGAR"
+      },
+      {
+        "value": "62",
+        "text": "62 - SHAHDARA"
+      },
+      {
+        "value": "63",
+        "text": "63 - SEEMA PURI"
+      },
+      {
+        "value": "64",
+        "text": "64 - ROHTAS NAGAR"
+      },
+      {
+        "value": "65",
+        "text": "65 - SEELAMPUR"
+      },
+      {
+        "value": "66",
+        "text": "66 - GHONDA"
+      },
+      {
+        "value": "67",
+        "text": "67 - BABARPUR"
+      },
+      {
+        "value": "68",
+        "text": "68 - GOKALPUR"
+      },
+      {
+        "value": "69",
+        "text": "69 - MUSTAFABAD"
+      },
+      {
+        "value": "70",
+        "text": "70 - KARAWAL NAGAR"
+      }
+    ]
+  },
+  "selected_roll_type": {
+    "value": "U05-2026-DR",
+    "text": "SIR DraftRoll - 2026"
+  },
+  "selected_constituency": {
+    "value": "1",
+    "text": "1 - NERELA"
+  },
+  "languages": [
+    {
+      "code": "ENG",
+      "name": "ENGLISH"
+    },
+    {
+      "code": "HIN",
+      "name": "HINDI"
+    }
+  ],
+  "part_count": 288,
+  "part_sample": [
+    {
+      "part_number": 1,
+      "part_name": "VILL  LAMPUR",
+      "district_code": "U0508"
+    },
+    {
+      "part_number": 2,
+      "part_name": "VILL  LAMPUR",
+      "district_code": "U0508"
+    },
+    {
+      "part_number": 3,
+      "part_name": "VILL BANKNER",
+      "district_code": "U0508"
+    },
+    {
+      "part_number": 4,
+      "part_name": "VILL BANKNER",
+      "district_code": "U0508"
+    },
+    {
+      "part_number": 5,
+      "part_name": "VILL BANKNER",
+      "district_code": "U0508"
+    },
+    {
+      "part_number": 6,
+      "part_name": "VILL BANKNER",
+      "district_code": "U0508"
+    },
+    {
+      "part_number": 7,
+      "part_name": "VILL BANKNER",
+      "district_code": "U0508"
+    },
+    {
+      "part_number": 8,
+      "part_name": "VILL BANKNER",
+      "district_code": "U0508"
+    },
+    {
+      "part_number": 9,
+      "part_name": "VILL BANKNER",
+      "district_code": "U0508"
+    },
+    {
+      "part_number": 10,
+      "part_name": "VILL BANKNER",
+      "district_code": "U0508"
+    }
+  ],
+  "structure": {
+    "selects": [
+      "stateCode",
+      "revyear",
+      "roleType",
+      "district",
+      "constituency",
+      "langCd"
+    ],
+    "captcha_input": "#captcha",
+    "captcha_image": "img[alt='Captcha']",
+    "captcha_width": 200,
+    "captcha_height": 80,
+    "captcha_src_kind": "data-url",
+    "captcha_refresh": "img[alt='refrsh captcha']",
+    "captcha_refresh_src": "https://voters.eci.gov.in/static/media/refresh.69dd6dde96ea2b06d9887b897bf4219f.svg",
+    "captcha_audio": "img[alt='Read aloud captcha']",
+    "captcha_audio_present": true,
+    "download_button": "Download Selected PDFs",
+    "select_all_present": true,
+    "select_all": "#selectAll",
+    "table": "table.contenttable-eroll",
+    "headers": [
+      "Select All",
+      "Part No and Part Name"
+    ],
+    "visible_rows": 10,
+    "search_placeholder": "Search",
+    "pager": [
+      "<<",
+      "<",
+      ">",
+      ">>"
+    ],
+    "page_size": 10,
+    "portal_part_limit": 10,
+    "select_all_checked_count": 10
+  },
+  "network": [
+    {
+      "method": "GET",
+      "path": "/api/v1/captcha-service/getCaptcha/EROLL",
+      "status": 200,
+      "note": "captcha payload omitted"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/captcha-service/generateVoiceCaptcha/{captchaId}",
+      "status": 200,
+      "note": "captcha payload omitted"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/printing-publish/get-publish-eroll-type",
+      "status": 200,
+      "note": "1 roll types: SIR DraftRoll - 2026"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/printing-publish/get-ac-languages",
+      "status": 200,
+      "note": "languages: ENG=ENGLISH, HIN=HINDI"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/printing-publish/get-publish-part-list",
+      "status": 200,
+      "note": "288 parts"
+    }
+  ]
+}
