@@ -77,6 +77,16 @@ class Checkpoint:
         job["status"] = "complete" if expected and set(expected).issubset(set(job["completed_parts"])) else "in_progress"
         self.save()
 
+    def is_complete(self, combo: Combination, expected: list[int] | None = None) -> bool:
+        job = self.jobs.get(combo.key())
+        if not job:
+            return False
+        want = list(expected) if expected is not None else list(job.get("expected_parts") or [])
+        if not want:
+            return job.get("status") == "complete"
+        saved = {int(number) for number in job.get("completed_parts", [])}
+        return set(want).issubset(saved)
+
     def _ensure(self, combo: Combination, expected: list[int]) -> dict:
         job = self.jobs.get(combo.key())
         if job is None:

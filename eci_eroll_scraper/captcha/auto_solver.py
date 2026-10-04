@@ -89,6 +89,48 @@ def _valid_answer(answer: str | None) -> bool:
     return bool(answer) and 4 <= len(answer) <= 6
 
 
+async def _dismiss_blocking_alerts(page: Page) -> None:
+    """Portal toast overlays (.alert_global) steal clicks for minutes; remove them."""
+    try:
+        removed = await page.evaluate(
+            """() => {
+                let n = 0;
+                for (const sel of [
+                    '.alert_global',
+                    '.alert.customError',
+                    '.library-alert',
+                    '[role="alert"]',
+                    '.Toastify',
+                ]) {
+                    document.querySelectorAll(sel).forEach((el) => {
+                        el.remove();
+                        n += 1;
+                    });
+                }
+                return n;
+            }"""
+        )
+        if removed:
+            logger.info("Dismissed %s blocking alert overlay(s)", removed)
+    except Exception as exc:
+        logger.debug("Alert dismiss skipped: %s", exc)
+
+
+async def _click_through_overlays(page: Page, locator, *, timeout_ms: int = 8_000) -> None:
+    """Click even when toast overlays intercept pointer events."""
+    await _dismiss_blocking_alerts(page)
+    try:
+        await locator.click(force=True, timeout=timeout_ms)
+        return
+    except Exception:
+        pass
+    await _dismiss_blocking_alerts(page)
+    handle = await locator.element_handle(timeout=timeout_ms)
+    if handle is None:
+        raise RuntimeError("element not found for click")
+    await handle.evaluate("el => el.click()")
+
+
 async def _refresh_captcha_payload(page: Page) -> dict | None:
     refresh_btn = page.locator(selectors.CAPTCHA_REFRESH)
     if await refresh_btn.count() == 0:
@@ -99,7 +141,7 @@ async def _refresh_captcha_payload(page: Page) -> dict | None:
             lambda r: "/getCaptcha/" in r.url and r.status == 200,
             timeout=15_000,
         ) as resp_info:
-            await refresh_btn.click()
+            await _click_through_overlays(page, refresh_btn, timeout_ms=8_000)
         response: Response = await resp_info.value
         body = await response.json()
         if "data" not in body:
@@ -175,16 +217,23 @@ async def _solve_candidates(page: Page) -> list[tuple[str, str]]:
 
 
 async def _fill_and_submit(page: Page, answer: str) -> None:
+    await _dismiss_blocking_alerts(page)
     inp = page.locator(selectors.CAPTCHA_INPUT)
-    await inp.click()
+    try:
+        await _click_through_overlays(page, inp, timeout_ms=5_000)
+    except Exception:
+        pass
     await inp.fill("")
     await page.wait_for_timeout(100)
-    await inp.type(answer, delay=50)
-    await page.wait_for_timeout(200)
+    await inp.fill(answer)
+    await page.wait_for_timeout(150)
     btn = page.locator(selectors.DOWNLOAD_BUTTON)
-    await btn.scroll_into_view_if_needed()
-    await page.wait_for_timeout(200)
-    await btn.click()
+    try:
+        await btn.scroll_into_view_if_needed(timeout=5_000)
+    except Exception:
+        pass
+    await page.wait_for_timeout(100)
+    await _click_through_overlays(page, btn, timeout_ms=8_000)
 
 
 async def wait_for_auto_captcha(
@@ -216,9 +265,12 @@ async def wait_for_auto_captcha(
 
         _get_whisper_model()
 
+    await _dismiss_blocking_alerts(page)
+
     for attempt in range(1, MAX_ATTEMPTS + 1):
         if attempt > 1:
             await asyncio.sleep(1)
+            await _dismiss_blocking_alerts(page)
 
         try:
             candidates = await _solve_candidates(page)
@@ -241,8 +293,27 @@ async def wait_for_auto_captcha(
             )
             network.start_capture()
             try:
-                await _fill_and_submit(page, answer)
-                result = await network.wait_for_generate()
+                try:
+                    await _fill_and_submit(page, answer)
+                except Exception as exc:
+                    logger.warning(
+                        "Attempt %s: submit click failed (%s): %s",
+                        attempt,
+                        method,
+                        exc,
+                    )
+                    continue
+                try:
+                    result = await network.wait_for_generate(config.GENERATE_TIMEOUT_S)
+                except asyncio.TimeoutError:
+                    logger.warning(
+                        "Attempt %s: no generate response within %ss (%s='%s')",
+                        attempt,
+                        int(config.GENERATE_TIMEOUT_S),
+                        method,
+                        answer,
+                    )
+                    continue
 
                 if result.accepted:
                     files = await network.wait_for_files(
@@ -267,7 +338,7 @@ async def wait_for_auto_captcha(
                 # Same captcha id is still valid — try next candidate without refresh.
             finally:
                 network.stop_capture()
-            network.discard_partial_capture()
+                network.discard_partial_capture()
 
         if accepted_any:
             continue

@@ -32,7 +32,15 @@ def _load_dotenv() -> None:
 _load_dotenv()
 
 PORTAL_URL = "https://voters.eci.gov.in/download-eroll"
-REVISION_YEAR = "2026"
+REVISION_YEAR = os.environ.get("ECI_REVISION_YEAR", "2026").strip() or "2026"
+# If SIR rolls are not published for REVISION_YEAR, fall back to this year.
+FALLBACK_YEAR = os.environ.get("ECI_FALLBACK_YEAR", "2025").strip() or "2025"
+
+# Skip these when walking --all-states (already completed).
+_SKIP_RAW = os.environ.get("ECI_SKIP_STATES", "NCT OF Delhi").strip()
+SKIP_STATES = {item.strip() for item in _SKIP_RAW.split(",") if item.strip()}
+_SKIP_CODE_RAW = os.environ.get("ECI_SKIP_STATE_CODES", "U05").strip()
+SKIP_STATE_CODES = {item.strip().upper() for item in _SKIP_CODE_RAW.split(",") if item.strip()}
 
 # Pause between ordinary navigation steps. CAPTCHA retries are not delayed.
 MIN_DELAY = 1.5
@@ -50,11 +58,16 @@ MIN_PDF_BYTES = 1024
 NAVIGATION_TIMEOUT_MS = 60_000
 ACTION_TIMEOUT_MS = 30_000
 DOWNLOAD_TIMEOUT_S = 180
+# Max wait for generate-published-pdfs after clicking Download (avoids hour-long hangs).
+GENERATE_TIMEOUT_S = float(os.environ.get("ECI_GENERATE_TIMEOUT_S", "45"))
 
 HEADLESS = os.environ.get("ECI_HEADLESS", "0") == "1"
 
-# Only download English rolls (skip Hindi / other languages).
-ENGLISH_ONLY = os.environ.get("ECI_ENGLISH_ONLY", "1") == "1"
+# Language pick: English if present, else Hindi, else any single language.
+# Set ECI_ALL_LANGUAGES=1 (or --all-languages) to download every language instead.
+ALL_LANGUAGES = os.environ.get("ECI_ALL_LANGUAGES", "0") == "1"
+# Back-compat: ECI_ENGLISH_ONLY=0 also enables all-languages mode.
+ENGLISH_ONLY = os.environ.get("ECI_ENGLISH_ONLY", "1") == "1" and not ALL_LANGUAGES
 
 DOWNLOAD_DIR = ROOT / "downloads"
 CORRUPT_DIR = DOWNLOAD_DIR / "corrupt"
@@ -64,6 +77,8 @@ PROGRESS_FILE = ROOT / "state" / "progress.json"
 METADATA_FILE = DOWNLOAD_DIR / "metadata.csv"
 DISCOVERY_REPORT = LOG_DIR / "last_discovery.json"
 GAPS_REPORT = LOG_DIR / "download_gaps.jsonl"
+STATUS_FILE = LOG_DIR / "run_status.json"
+FAILURES_FILE = LOG_DIR / "failures.jsonl"
 
 # AWS S3 — when configured, PDFs are stored in the bucket (not kept locally).
 AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", "").strip()

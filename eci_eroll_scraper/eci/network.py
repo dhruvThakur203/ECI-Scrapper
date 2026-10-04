@@ -84,8 +84,11 @@ class NetworkRecorder:
         self._file_event = asyncio.Event()
         self._pending_file_urls.clear()
 
-    async def wait_for_generate(self) -> GenerateResult:
-        return await self._generate.get()
+    async def wait_for_generate(self, timeout: float | None = None) -> GenerateResult:
+        """Wait for generate-published-pdfs. Raises asyncio.TimeoutError if nothing arrives."""
+        if timeout is None:
+            return await self._generate.get()
+        return await asyncio.wait_for(self._generate.get(), timeout=timeout)
 
     async def wait_for_files(self, expected: int, timeout: float) -> list[CapturedFile]:
         """Wait until every generated file arrives, or traffic stays quiet."""

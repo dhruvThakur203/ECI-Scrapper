@@ -17,6 +17,7 @@ from eci.batches import plan_batches
 from eci.checkpoint import Checkpoint
 from eci.downloader import DownloadStore
 from eci.models import Combination, Option, PartRecord, StateOption
+from eci.status_log import StatusLog
 from eci import selectors
 
 import config
@@ -33,13 +34,21 @@ class _TestFinished(Exception):
 
 
 class Portal:
-    def __init__(self, session: BrowserSession, checkpoint: Checkpoint, store: DownloadStore) -> None:
+    def __init__(
+        self,
+        session: BrowserSession,
+        checkpoint: Checkpoint,
+        store: DownloadStore,
+        status_log: StatusLog | None = None,
+    ) -> None:
         self.session = session
         self.page = session.page
         self.network = session.network
         self.checkpoint = checkpoint
         self.store = store
+        self.status = status_log or StatusLog()
         self.district_names: dict[str, str] = {}
+        self.active_year = config.REVISION_YEAR
 
     async def discover(self, state_name: str | None, state_code: str | None) -> dict[str, Any]:
         await self._open()
@@ -55,9 +64,8 @@ class Portal:
             print(f"  {state.state_code}  {state.state_name}")
 
         await self._select_state(target)
-        await self._ensure_year()
-        roll_types = await self._roll_types()
-        report["year"] = await self.page.locator(selectors.YEAR_SELECT).input_value()
+        year, roll_types = await self._resolve_year_and_roll_types()
+        report["year"] = year
         report["roll_types"] = [option.__dict__ for option in roll_types]
         print(f"\nYear of revision: {report['year']}")
         print(f"Roll types for {target.state_name}: {len(roll_types)}")
@@ -117,40 +125,61 @@ class Portal:
         all_states: bool,
         dry_run: bool,
         test_one: bool = False,
+        skip_states: set[str] | None = None,
+        skip_state_codes: set[str] | None = None,
     ) -> None:
         await self._open()
         states = await self._states()
         chosen = states if all_states else [_pick_state(states, state_name, state_code, default_first=False)]
+        skip_names = {name.casefold() for name in (skip_states if skip_states is not None else config.SKIP_STATES)}
+        skip_codes = {code.upper() for code in (skip_state_codes if skip_state_codes is not None else config.SKIP_STATE_CODES)}
+        if all_states:
+            filtered: list[StateOption] = []
+            for state in chosen:
+                if state.state_name.casefold() in skip_names or state.state_code.upper() in skip_codes:
+                    logger.info("Skipping completed/excluded state: %s (%s)", state.state_name, state.state_code)
+                    self.status.skip_state(state.state_name, state.state_code, "excluded (already completed or configured skip)")
+                    continue
+                filtered.append(state)
+            chosen = filtered
+            logger.info("All-states run: %s state(s) queued (skips applied)", len(chosen))
         for state in chosen:
             try:
                 await self._process_state(state, dry_run=dry_run, test_one=test_one)
+                self.status.finish_state(state.state_name, ok=True)
             except _TestFinished:
                 logger.info("Test batch finished. Remaining combinations were not started.")
+                self.status.print_summary()
                 return
-            except Exception:
+            except Exception as exc:
                 logger.exception("State failed: %s", state.state_name)
+                self.status.finish_state(state.state_name, ok=False, reason=str(exc))
                 self.checkpoint.save()
                 if not all_states:
                     raise
+        self.status.print_summary()
 
     async def _process_state(self, state: StateOption, *, dry_run: bool, test_one: bool = False) -> None:
         await self._select_state(state)
-        await self._ensure_year()
-        roll_types = await self._roll_types()
+        year, roll_types = await self._resolve_year_and_roll_types()
+        self.active_year = year
         if test_one:
             roll_types = roll_types[:1]
         logger.info("State: %s", state.state_name)
+        logger.info("Year of revision for %s: %s", state.state_name, year)
         logger.info("%s roll types found for %s", len(roll_types), state.state_name)
+        self.status.start_state(state.state_name, state.state_code, year, len(roll_types))
         for roll in roll_types:
             try:
                 await self._select_roll_type(roll)
                 controls = await self._dependent_controls()
+                # Leave district on "Select District" so every AC for the roll type is listed.
                 constituencies = [Option(**item) for item in controls["constituencies"]]
                 if test_one:
                     constituencies = constituencies[:1]
                 logger.info("Roll Type: %s", roll.text)
                 logger.info(
-                    "%s assembly constituencies for %s (district selector %s)",
+                    "%s assembly constituencies for %s (district selector %s, left unselected)",
                     len(constituencies),
                     roll.text,
                     "visible" if controls["district_visible"] else "absent",
@@ -170,12 +199,20 @@ class Portal:
                         logger.exception("Assembly constituency failed: %s / %s", roll.text, constituency.text)
                         self._report_ac_failure(state, roll, constituency, exc)
                         self.checkpoint.save()
-                        # Do not swallow permanently — resume will retry incomplete ACs from disk gaps.
                         # Continue so other ACs still get processed in this run.
             except _TestFinished:
                 raise
-            except Exception:
+            except Exception as exc:
                 logger.exception("Roll type failed: %s", roll.text)
+                self.status.record_ac_failure(
+                    state=state.state_name,
+                    state_code=state.state_code,
+                    year=self.active_year,
+                    roll_type=roll.text,
+                    ac="*",
+                    ac_code="",
+                    reason=f"roll_type_failed: {exc}",
+                )
                 self.checkpoint.save()
 
     async def _process_constituency(
@@ -193,31 +230,32 @@ class Portal:
         logger.info("Total parts: %s", len(parts))
         if not languages:
             logger.warning("No language options for %s / %s", roll.text, constituency.text)
+            self.status.record_ac_failure(
+                state=state.state_name,
+                state_code=state.state_code,
+                year=self.active_year,
+                roll_type=roll.text,
+                ac=constituency.text,
+                ac_code=constituency.value,
+                reason="no_language_options",
+            )
             return
+        available = list(languages)
         if config.ENGLISH_ONLY:
-            filtered = [
-                (code, name)
-                for code, name in languages
-                if code.upper() == "ENG" or name.upper() == "ENGLISH"
-            ]
-            if filtered:
-                logger.info("English-only mode: keeping %s of %s languages", len(filtered), len(languages))
-                languages = filtered
-            else:
-                logger.warning(
-                    "English-only mode: no ENGLISH option for %s / %s (had %s)",
-                    roll.text,
-                    constituency.text,
-                    languages,
-                )
-                return
+            languages = _prefer_language(available)
+            logger.info(
+                "Language pick for %s: %s (from %s)",
+                constituency.text,
+                ", ".join(f"{name}[{code}]" for code, name in languages) or "(none)",
+                ", ".join(f"{name}[{code}]" for code, name in available),
+            )
         if test_one:
             languages = languages[:1]
         for code, name in languages:
             combo = Combination(
                 state=state.state_name,
                 state_code=state.state_code,
-                year=config.REVISION_YEAR,
+                year=self.active_year,
                 roll_type=roll.text,
                 roll_type_id=roll.value,
                 district=district_name,
@@ -231,6 +269,21 @@ class Portal:
             if dry_run:
                 self._log_dry_run(combo, parts)
                 continue
+            # Fast resume: skip combinations already fully stored (S3/local + checkpoint).
+            if self._combination_complete(combo, parts):
+                expected = [part.part_number for part in parts]
+                have = self._already_downloaded(combo)
+                self.checkpoint.mark_completed(combo, sorted(have), expected)
+                self.status.update_combination(combo, expected=expected, downloaded=have, missing=[])
+                logger.info(
+                    "Checkpoint skip (already complete): %s / %s / %s — %s/%s parts",
+                    combo.roll_type,
+                    combo.ac,
+                    combo.language,
+                    len(have),
+                    len(expected),
+                )
+                continue
             try:
                 await self._download_combination(combo, parts, test_one=test_one)
             except _TestFinished:
@@ -242,6 +295,15 @@ class Portal:
                     constituency.text,
                     name,
                     exc,
+                )
+                have = self._already_downloaded(combo)
+                expected = [part.part_number for part in parts]
+                self.status.update_combination(
+                    combo,
+                    expected=expected,
+                    downloaded=have,
+                    missing=[n for n in expected if n not in have],
+                    failure_reason=str(exc),
                 )
                 self.checkpoint.save()
 
@@ -273,6 +335,21 @@ class Portal:
         # A valid file is enough on its own. A checkpoint entry without a valid file is not.
         return on_disk if on_disk else confirmed
 
+    def _combination_complete(self, combo: Combination, parts: list[PartRecord]) -> bool:
+        """True when every expected part is already on S3/local (resume fast-path)."""
+        if not parts:
+            return True
+        expected = {part.part_number for part in parts}
+        have = self._already_downloaded(combo)
+        if expected.issubset(have):
+            return True
+        # Checkpoint alone is never enough — files must exist — but if checkpoint
+        # says complete and S3 listing matches expected count, treat as done.
+        job = self.checkpoint.jobs.get(combo.key()) or {}
+        if job.get("status") == "complete" and expected.issubset(have):
+            return True
+        return False
+
     async def _download_combination(self, combo: Combination, parts: list[PartRecord], *, test_one: bool) -> None:
         expected = [part.part_number for part in parts]
         already = self._already_downloaded(combo)
@@ -286,12 +363,15 @@ class Portal:
         logger.info("Already downloaded: %s", len(already))
         remaining_count = sum(len(batch) for batch in plan_batches(parts, already))
         logger.info("Remaining: %s", remaining_count)
+        self.status.update_combination(combo, expected=expected, downloaded=already)
         if not parts:
             logger.warning("No parts to download for %s / %s", combo.ac, combo.language)
             self.checkpoint.mark_completed(combo, [], [])
+            self.status.update_combination(combo, expected=[], downloaded=set())
             return
         if remaining_count == 0:
             logger.info("Batch complete")
+            self.status.update_combination(combo, expected=expected, downloaded=already)
             return
 
         await self._select_language(combo.language_code, combo.language)
@@ -338,6 +418,13 @@ class Portal:
                     missed = [number for number in wanted if number not in saved]
                     if saved:
                         self.checkpoint.mark_completed(combo, saved, expected)
+                    have_now = self._already_downloaded(combo)
+                    self.status.update_combination(
+                        combo,
+                        expected=expected,
+                        downloaded=have_now,
+                        missing=[n for n in expected if n not in have_now],
+                    )
                     if missed:
                         self.checkpoint.mark_failed(combo, missed, expected)
                         logger.warning(
@@ -409,11 +496,19 @@ class Portal:
                 missing,
                 reason="combination_incomplete",
             )
+            self.status.update_combination(
+                combo,
+                expected=expected,
+                downloaded=final_have,
+                missing=missing,
+                failure_reason="combination_incomplete",
+            )
             raise PortalError(
                 f"{combo.ac} / {combo.language}: downloaded {len(final_have)}/{len(expected)} parts; "
                 f"missing {len(missing)} parts {missing[:20]}{'...' if len(missing) > 20 else ''}. "
                 f"See {config.GAPS_REPORT}"
             )
+        self.status.update_combination(combo, expected=expected, downloaded=final_have, missing=[])
         logger.info("All %s parts complete for %s / %s", len(expected), combo.ac, combo.language)
 
     async def _recover_after_batch_error(self, combo: Combination) -> None:
@@ -465,12 +560,20 @@ class Portal:
                     f"Downloaded: {len(have)} / {len(expected)}",
                     f"Missing ({len(missing)}): {missing[:30]}{'...' if len(missing) > 30 else ''}",
                     f"Written to: {config.GAPS_REPORT}",
-                    "Resume later with: python scraper.py --resume --state \"NCT OF Delhi\"",
+                    f"Status: {config.STATUS_FILE}",
+                    f'Resume: python scraper.py --resume --state "{combo.state}"',
                     "==================================================",
                     "",
                 ]
             ),
             flush=True,
+        )
+        self.status.update_combination(
+            combo,
+            expected=expected,
+            downloaded=have,
+            missing=missing,
+            failure_reason=reason,
         )
         logger.error(
             "GAP %s / %s: %s/%s downloaded, missing %s — %s",
@@ -495,6 +598,7 @@ class Portal:
             "reason": "ac_exception",
             "state": state.state_name,
             "state_code": state.state_code,
+            "year": self.active_year,
             "roll_type": roll.text,
             "ac": constituency.text,
             "ac_code": constituency.value,
@@ -502,6 +606,15 @@ class Portal:
         }
         with config.GAPS_REPORT.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        self.status.record_ac_failure(
+            state=state.state_name,
+            state_code=state.state_code,
+            year=self.active_year,
+            roll_type=roll.text,
+            ac=constituency.text,
+            ac_code=constituency.value,
+            reason=str(exc),
+        )
         print(
             "\n".join(
                 [
@@ -509,10 +622,12 @@ class Portal:
                     "==================================================",
                     "AC SKIPPED AFTER FAILURE",
                     "==================================================",
+                    f"State: {state.state_name}",
                     f"AC: {constituency.text}",
                     f"Roll: {roll.text}",
                     f"Error: {exc}",
                     f"Logged in: {config.GAPS_REPORT}",
+                    f"Status: {config.STATUS_FILE}",
                     "Incomplete parts will be retried on --resume",
                     "==================================================",
                     "",
@@ -562,10 +677,56 @@ class Portal:
         await _retry(f"Select state {state.state_name}", attempt)
         logger.info("State selected: %s", state.state_name)
 
-    async def _ensure_year(self) -> None:
-        value = await self.page.locator(selectors.YEAR_SELECT).input_value()
-        if value == config.REVISION_YEAR:
-            logger.info("Year of revision verified: %s", value)
+    async def _resolve_year_and_roll_types(self) -> tuple[str, list[Option]]:
+        """Prefer REVISION_YEAR; fall back to FALLBACK_YEAR when SIR is unpublished."""
+        preferred = config.REVISION_YEAR
+        fallback = config.FALLBACK_YEAR
+        await self._select_year(preferred)
+        roll_types = await self._roll_types(required=False)
+        alert = await self._sir_year_hint()
+        has_sir = _has_sir_roll(roll_types)
+        unpublished = "not published" in (alert or "").lower()
+        if roll_types and has_sir and not unpublished:
+            logger.info("Using year %s (%s roll types, SIR present)", preferred, len(roll_types))
+            return preferred, roll_types
+
+        reason_bits: list[str] = []
+        if not roll_types:
+            reason_bits.append("no roll types")
+        elif not has_sir:
+            reason_bits.append("no SIR roll type")
+        if unpublished:
+            reason_bits.append("portal says SIR not published")
+        elif alert:
+            reason_bits.append(f"portal alert: {alert}")
+        reason = "; ".join(reason_bits) or "SIR unpublished for preferred year"
+        logger.warning(
+            "Year %s not usable for SIR (%s). Falling back to %s",
+            preferred,
+            reason,
+            fallback,
+        )
+        if preferred == fallback:
+            if not roll_types:
+                raise PortalError(f"No roll types for year {preferred}")
+            return preferred, roll_types
+
+        await self._select_year(fallback)
+        roll_types = await self._roll_types(required=True)
+        logger.info("Using fallback year %s (%s roll types)", fallback, len(roll_types))
+        return fallback, roll_types
+
+    async def _select_year(self, year: str) -> None:
+        available = {
+            option.value
+            for option in await _read_options(self.page, selectors.YEAR_SELECT)
+            if option.value
+        }
+        if year not in available:
+            raise PortalError(f"Year {year} is not in the portal dropdown (have {sorted(available)})")
+        current = await self.page.locator(selectors.YEAR_SELECT).input_value()
+        if current == year:
+            logger.info("Year of revision verified: %s", year)
             return
 
         async def attempt() -> None:
@@ -573,25 +734,53 @@ class Portal:
                 lambda response: selectors.API_ROLL_TYPES in response.url and response.status == 200,
                 timeout=config.NAVIGATION_TIMEOUT_MS,
             ):
-                await self.page.select_option(selectors.YEAR_SELECT, config.REVISION_YEAR)
+                await self.page.select_option(selectors.YEAR_SELECT, year)
             await _pause()
             selected = await self.page.locator(selectors.YEAR_SELECT).input_value()
-            if selected != config.REVISION_YEAR:
-                raise PortalError(f"Year is {selected}, expected {config.REVISION_YEAR}")
+            if selected != year:
+                raise PortalError(f"Year is {selected}, expected {year}")
 
-        await _retry("Select revision year 2026", attempt)
-        logger.info("Year of revision verified: %s", config.REVISION_YEAR)
+        await _retry(f"Select revision year {year}", attempt)
+        logger.info("Year of revision verified: %s", year)
 
-    async def _roll_types(self) -> list[Option]:
-        await self.page.wait_for_function(
-            """() => {
-                const el = document.querySelector('#roleType');
-                return !!el && [...el.options].some(option => option.value);
-            }""",
-            timeout=config.NAVIGATION_TIMEOUT_MS,
-        )
+    async def _sir_year_hint(self) -> str:
+        """Read portal banners that tell operators to use another SIR year/roll."""
+        try:
+            texts = await self.page.evaluate(
+                """() => {
+                    const out = [];
+                    const nodes = document.querySelectorAll(
+                        '.alert, .library-alert, [role="alert"], .text-danger, .text-red, p, span, div, strong'
+                    );
+                    for (const el of nodes) {
+                        const t = (el.textContent || '').replace(/\\s+/g, ' ').trim();
+                        if (t.length < 24 || t.length > 280) continue;
+                        if (!/SIR/i.test(t)) continue;
+                        if (!/(not published|select roll type|final roll|draft roll|2025|2024)/i.test(t)) continue;
+                        if (!out.includes(t)) out.push(t);
+                    }
+                    return out.slice(0, 5);
+                }"""
+            )
+        except Exception:
+            return ""
+        return texts[0] if texts else ""
+
+    async def _roll_types(self, *, required: bool = True) -> list[Option]:
+        try:
+            await self.page.wait_for_function(
+                """() => {
+                    const el = document.querySelector('#roleType');
+                    return !!el && [...el.options].some(option => option.value);
+                }""",
+                timeout=config.NAVIGATION_TIMEOUT_MS,
+            )
+        except PlaywrightTimeoutError:
+            if required:
+                raise PortalError("No roll types were returned for this state and year")
+            return []
         options = [option for option in await _read_options(self.page, selectors.ROLL_TYPE_SELECT) if option.value]
-        if not options:
+        if not options and required:
             raise PortalError("No roll types were returned for this state and year")
         return options
 
@@ -986,6 +1175,25 @@ class Portal:
         print("\nRelevant network calls")
         for event in self.network.events:
             print(f"  {event.status} {event.method} {event.path}  {event.note}")
+
+
+def _has_sir_roll(roll_types: list[Option]) -> bool:
+    return any("SIR" in (option.text or "").upper() for option in roll_types)
+
+
+def _prefer_language(languages: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Pick one language: English → Hindi → first available."""
+    if not languages:
+        return []
+    for code, name in languages:
+        if code.upper() == "ENG" or name.upper() == "ENGLISH":
+            return [(code, name)]
+    for code, name in languages:
+        if code.upper() == "HIN" or name.upper() in {"HINDI", "हिन्दी", "हिंदी"}:
+            return [(code, name)]
+    code, name = languages[0]
+    logger.info("No English/Hindi — using sole fallback language %s [%s]", name, code)
+    return [(code, name)]
 
 
 def _pick_state(
